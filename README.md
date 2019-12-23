@@ -1,0 +1,1 @@
+A Teensy 3.5 based Lightsaber. Written in VSCode with the PlatformIO Extension (and the Arduino IDE when needed).
