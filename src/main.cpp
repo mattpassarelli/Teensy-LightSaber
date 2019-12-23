@@ -94,7 +94,7 @@ void turnOn()
     Serial.println("Playing on sound");
     playSdWav1.play("POWERON.WAV");
     //Seems this value is dependent on how long my ignition sound is
-    delay(825);
+    delay(1400);
     playSdWav1.play("HUM.WAV");
     delay(10);
   }
