@@ -3,6 +3,7 @@
 #include <SPI.h>
 #include <SD.h>
 #include <SerialFlash.h>
+#include <OctoWS2811.h>
 // #include <WS2812Serial.h>
 // #include <Adafruit_LSM9DS1.h>
 // #include <Adafruit_Sensor.h>  // not used in this demo but required!
@@ -26,6 +27,16 @@ AudioConnection patchCord8(mixer1, 0, dacs1, 1);
 #define SDCARD_CS_PIN BUILTIN_SDCARD
 #define SDCARD_MOSI_PIN 11 // not actually used
 #define SDCARD_SCK_PIN 13  // not actually used
+
+const int ledsPerStrip = 120;
+
+DMAMEM int displayMemory[ledsPerStrip*6];
+int drawingMemory[ledsPerStrip*6];
+
+const int config = WS2811_GRB || WS2811_800kHz;
+
+OctoWS2811 leds(ledsPerStrip, displayMemory, drawingMemory, config);
+
 
 int function = 0; //what action are we going to perform
 int previousMillisInterrupt = 0;
@@ -52,6 +63,9 @@ void setup()
   // put your setup code here, to run once:
   Serial.println("Setup start");
   Serial.begin(9600);
+
+   leds.begin();
+  leds.show();
 
   pinMode(LED_BUILTIN, OUTPUT);
   pinMode(onOffButton, INPUT);
@@ -98,6 +112,13 @@ void turnOn()
     playSdWav1.play("HUM.WAV");
     delay(10);
   }
+
+  for(int i = 0; i < ledsPerStrip; i++){
+    leds.setPixel(i, 255,255,255);
+  }
+
+  leds.show();
+
   function = 2;
 }
 
@@ -106,6 +127,12 @@ void turnOff()
   digitalWrite(LED_BUILTIN, LOW);
 
     Serial.println("Playing off sound");
+    for(int i = 0; i < ledsPerStrip; i++){
+    leds.setPixel(i, 0,0,0);
+  }
+
+  leds.show();
+
     playSdWav1.play("POWEROFF.WAV");
    
   function = 0;
