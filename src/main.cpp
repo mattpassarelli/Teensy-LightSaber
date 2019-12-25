@@ -3,7 +3,7 @@
 #include <SPI.h>
 #include <SD.h>
 #include <SerialFlash.h>
-#include <OctoWS2811.h>
+#include <WS2812Serial.h>
 // #include <WS2812Serial.h>
 // #include <Adafruit_LSM9DS1.h>
 // #include <Adafruit_Sensor.h>  // not used in this demo but required!
@@ -27,15 +27,15 @@ AudioConnection patchCord8(mixer1, 0, dacs1, 1);
 #define SDCARD_CS_PIN BUILTIN_SDCARD
 #define SDCARD_MOSI_PIN 11 // not actually used
 #define SDCARD_SCK_PIN 13  // not actually used
+#define PIN 1
 
-const int ledsPerStrip = 120;
+const int numled = 130;
 
-DMAMEM int displayMemory[ledsPerStrip*6];
-int drawingMemory[ledsPerStrip*6];
 
-const int config = WS2811_GRB || WS2811_800kHz;
+byte drawingMemory[numled*3];         //  3 bytes per LED
+DMAMEM byte displayMemory[numled*12]; // 12 bytes per LED
 
-OctoWS2811 leds(ledsPerStrip, displayMemory, drawingMemory, config);
+WS2812Serial leds(numled, displayMemory, drawingMemory, PIN, WS2812_GRB);
 
 
 int function = 0; //what action are we going to perform
@@ -113,11 +113,11 @@ void turnOn()
     delay(10);
   }
 
-  for(int i = 0; i < ledsPerStrip; i++){
-    leds.setPixel(i, 255,255,255);
+   for (int i=0; i < leds.numPixels(); i++) {
+    leds.setPixel(i, 0x00FF00);
+    leds.show();
+    delayMicroseconds(5);
   }
-
-  leds.show();
 
   function = 2;
 }
@@ -127,11 +127,16 @@ void turnOff()
   digitalWrite(LED_BUILTIN, LOW);
 
     Serial.println("Playing off sound");
-    for(int i = 0; i < ledsPerStrip; i++){
-    leds.setPixel(i, 0,0,0);
-  }
 
-  leds.show();
+    //TODO: Reverse For loop
+    for (int i = 0; i < leds.numPixels(); i++)
+    {
+      leds.setPixel(i, 0, 0, 0);
+      leds.show();
+      delayMicroseconds(5);
+    }
+
+    leds.show();
 
     playSdWav1.play("POWEROFF.WAV");
    
