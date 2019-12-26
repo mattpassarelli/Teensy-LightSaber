@@ -28,12 +28,16 @@ AudioConnection patchCord8(mixer1, 0, dacs1, 1);
 #define SDCARD_MOSI_PIN 11 // not actually used
 #define SDCARD_SCK_PIN 13  // not actually used
 #define PIN 1
+#define OFFCOLOR 0x000000
+#define GREEN 0x00FF00
+#define RED 0xFF0000
+#define BLUE 0x12B5F0
 
 const int numled = 130;
 
 
-byte drawingMemory[numled*3];         //  3 bytes per LED
-DMAMEM byte displayMemory[numled*12]; // 12 bytes per LED
+byte drawingMemory[numled * 3];       //  3 bytes per LED
+DMAMEM byte displayMemory[numled * 12]; // 12 bytes per LED
 
 WS2812Serial leds(numled, displayMemory, drawingMemory, PIN, WS2812_GRB);
 
@@ -47,8 +51,8 @@ void buttonPress()
   if (currentMillisInterrupt - previousMillisInterrupt >= 1000)
   {
     function++;
-      Serial.print("Function is now: ");
-      Serial.println(function);
+    Serial.print("Function is now: ");
+    Serial.println(function);
 
     if (function >= 4)
     {
@@ -64,13 +68,18 @@ void setup()
   Serial.println("Setup start");
   Serial.begin(9600);
 
-   leds.begin();
+  leds.begin();
+  for (int i = numled; i > -10; i--)
+  {
+    leds.setPixel(i, OFFCOLOR);
+    leds.show();
+  }
   leds.show();
 
   pinMode(LED_BUILTIN, OUTPUT);
   pinMode(onOffButton, INPUT);
 
-  AudioMemory(20);
+  AudioMemory(8);
   SPI.setMOSI(SDCARD_MOSI_PIN);
   SPI.setSCK(SDCARD_SCK_PIN);
   if (!(SD.begin(SDCARD_CS_PIN)))
@@ -103,20 +112,23 @@ void stayOff() {}
 void turnOn()
 {
   digitalWrite(LED_BUILTIN, HIGH);
-  if (playSdWav1.isPlaying() == false) 
+
+  if (playSdWav1.isPlaying() == false)
   {
     Serial.println("Playing on sound");
     playSdWav1.play("POWERON.WAV");
     //Seems this value is dependent on how long my ignition sound is
-    delay(1400);
-    playSdWav1.play("HUM.WAV");
     delay(10);
+    //Don't play sound here. It overrides the ignition for some reason
+    //    playSdWav1.play("HUM.WAV");
+    //    delay(10);
   }
 
-   for (int i=0; i < leds.numPixels(); i++) {
-    leds.setPixel(i, 0x00FF00);
+  for(int i = 1; i < 141; i++){
+    leds.setPixel(i, BLUE);
+    leds.setPixel(i+1, BLUE);
+    i++;
     leds.show();
-    delayMicroseconds(5);
   }
 
   function = 2;
@@ -126,25 +138,24 @@ void turnOff()
 {
   digitalWrite(LED_BUILTIN, LOW);
 
-    Serial.println("Playing off sound");
+  Serial.println("Playing off sound");
+  playSdWav1.play("POWEROFF.WAV");
+  delay(10);
 
-    //TODO: Reverse For loop
-    for (int i = 0; i < leds.numPixels(); i++)
-    {
-      leds.setPixel(i, 0, 0, 0);
-      leds.show();
-      delayMicroseconds(5);
-    }
-
+  //TODO: Reverse For loop
+  for (int i = numled; i > -10; i--)
+  {
+    leds.setPixel(i, OFFCOLOR);
     leds.show();
+  }
 
-    playSdWav1.play("POWEROFF.WAV");
-   
+
+
   function = 0;
 }
 
-void poweredOn(){
-  if (playSdWav1.isPlaying() == false) 
+void poweredOn() {
+  if (playSdWav1.isPlaying() == false)
   {
     Serial.println("Playing HUM sound");
     playSdWav1.play("HUM.WAV");
@@ -157,19 +168,19 @@ void loop()
   // put your main code here, to run repeatedly:
   switch (function)
   {
-  case 0:
-    stayOff();
-    break;
-  case 1:
-    turnOn();
-    break;
-  case 2:
-    poweredOn();
-    break;
-  case 3:
-    turnOff();
-    break;
-  default:
-    break;
+    case 0:
+      stayOff();
+      break;
+    case 1:
+      turnOn();
+      break;
+    case 2:
+      poweredOn();
+      break;
+    case 3:
+      turnOff();
+      break;
+    default:
+      break;
   }
 }
