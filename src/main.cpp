@@ -4,9 +4,7 @@
 #include <SD.h>
 #include <SerialFlash.h>
 #include <WS2812Serial.h>
-// #include <WS2812Serial.h>
-// #include <Adafruit_LSM9DS1.h>
-// #include <Adafruit_Sensor.h>  // not used in this demo but required!
+#include "MPU9250.h"
 
 // GUItool: begin automatically generated code
 AudioPlaySdWav playSdWav3;     //xy=154,392
@@ -28,22 +26,32 @@ AudioConnection patchCord8(mixer1, 0, dacs1, 1);
 #define SDCARD_MOSI_PIN 11 // not actually used
 #define SDCARD_SCK_PIN 13  // not actually used
 #define PIN 1
+//Colors
 #define OFFCOLOR 0x000000
 #define GREEN 0x00FF00
 #define RED 0xFF0000
 #define BLUE 0x12B5F0
 
-const int numled = 130;
+const int numled = 144;
+int previousMillisInterrupt = 0;
+int previousMillisAccel = 0;
+int currentMillisAccel = 0;
+int xSwingThresholdPositive = 1;
+int zSwingThresholdPositive = 1;
+int xSwingThresholdNegative = -1;
+int zSwingThresholdNegative = -1;
+int clashThreshold = 28;
+int clashThresholdNegative = -28;
+
+int function = 0; //what action are we going to perform
 
 
 byte drawingMemory[numled * 3];       //  3 bytes per LED
 DMAMEM byte displayMemory[numled * 12]; // 12 bytes per LED
 
 WS2812Serial leds(numled, displayMemory, drawingMemory, PIN, WS2812_GRB);
+MPU9250 IMU(Wire,0x68);
 
-
-int function = 0; //what action are we going to perform
-int previousMillisInterrupt = 0;
 
 void buttonPress()
 {
@@ -68,6 +76,7 @@ void setup()
   Serial.println("Setup start");
   Serial.begin(9600);
 
+  //Set LEDs to Off
   leds.begin();
   for (int i = numled; i > -10; i--)
   {
@@ -78,6 +87,8 @@ void setup()
 
   pinMode(LED_BUILTIN, OUTPUT);
   pinMode(onOffButton, INPUT);
+
+  delay(250);
 
   AudioMemory(8);
   SPI.setMOSI(SDCARD_MOSI_PIN);
@@ -119,14 +130,14 @@ void turnOn()
     playSdWav1.play("POWERON.WAV");
     //Seems this value is dependent on how long my ignition sound is
     delay(10);
-    //Don't play sound here. It overrides the ignition for some reason
-    //    playSdWav1.play("HUM.WAV");
-    //    delay(10);
+    // Don't play sound here. It overrides the ignition for some reason
+      //  playSdWav2.play("HUM.WAV");
+      //  delay(10);
   }
 
-  for(int i = 1; i < 141; i++){
-    leds.setPixel(i, BLUE);
-    leds.setPixel(i+1, BLUE);
+  for(int i = 1; i < numled; i++){
+    leds.setPixel(i, GREEN);
+    leds.setPixel(i+1, GREEN);
     i++;
     leds.show();
   }
@@ -142,25 +153,149 @@ void turnOff()
   playSdWav1.play("POWEROFF.WAV");
   delay(10);
 
-  //TODO: Reverse For loop
   for (int i = numled; i > -10; i--)
   {
     leds.setPixel(i, OFFCOLOR);
     leds.show();
   }
 
-
-
   function = 0;
 }
 
-void poweredOn() {
+void swing()
+{
+  int index = random(0, 15);
+
+  const char *swing = "";
+
+  switch (index)
+  {
+  case 0:
+    swing = "SWING1.WAV";
+    break;
+  case 1:
+    swing = "SWING2.WAV";
+    break;
+  case 2:
+    swing = "SWING3.WAV";
+    break;
+  case 3:
+    swing = "SWING4.WAV";
+    break;
+  case 4:
+    swing = "SWING5.WAV";
+    break;
+  case 5:
+    swing = "SWING6.WAV";
+    break;
+  case 6:
+    swing = "SWING7.WAV";
+    break;
+  case 7:
+    swing = "SWING8.WAV";
+    break;
+  case 8:
+    swing = "SWING8.WAV";
+    break;
+  case 9:
+    swing = "SWING10.WAV";
+    break;
+  case 10:
+    swing = "SWING11.WAV";
+    break;
+  case 11:
+    swing = "SWING12.WAV";
+    break;
+  case 12:
+    swing = "SWING13.WAV";
+    break;
+  case 13:
+    swing = "SWING14.WAV";
+    break;
+  case 14:
+    swing = "SWING15.WAV";
+    break;
+  case 15:
+    swing = "SWING16.WAV";
+    break;
+  default:
+    swing = "SWING1.WAV";
+    break;
+  }
+
   if (playSdWav1.isPlaying() == false)
   {
-    Serial.println("Playing HUM sound");
-    playSdWav1.play("HUM.WAV");
+    Serial.println("Playing swing sound");
+    playSdWav1.play(swing);
     delay(10);
   }
+}
+
+void clash()
+{
+  int index = random(0, 2);
+  const char *clash = "";
+
+  switch (index)
+  {
+  case 0:
+    clash = "CLASH1.WAV";
+    break;
+  case 1:
+    clash = "CLASH2.WAV";
+    break;
+  case 2:
+    clash = "CLASH3.WAV";
+    break;
+  }
+
+  if (playSdWav1.isPlaying() == false)
+  {
+    Serial.println("Playing clash sound");
+    playSdWav1.play(clash);
+    delay(10);
+  }
+}
+
+void readAccelerometer()
+{
+  IMU.readSensor();
+
+  float gyroX = IMU.getGyroX_rads();
+  float gyroZ = IMU.getGyroZ_rads();
+  float accelerationTotal = IMU.getAccelX_mss() + IMU.getAccelY_mss() + IMU.getAccelZ_mss();
+
+  Serial.print("Accelertaion Total: " );
+  Serial.println(accelerationTotal, 6);
+
+  if(accelerationTotal >= clashThreshold || accelerationTotal <= clashThresholdNegative){
+    Serial.println("We've clashed");
+    clash();
+  }  
+
+if (gyroX >= xSwingThresholdPositive || gyroX <= xSwingThresholdNegative)
+  {
+      Serial.println("SWINGING!");
+      // swing();
+  }
+  if (gyroZ >= zSwingThresholdPositive || gyroZ <= zSwingThresholdNegative)
+  {
+      Serial.println("SWINGING!");
+      // swing();
+  }
+
+  delay(100);
+}
+
+void poweredOn() {
+  // if (playSdWav1.isPlaying() == false)
+  // {
+  //   Serial.println("Playing HUM sound");
+  //   playSdWav1.play("HUM.WAV");
+  //   delay(10);
+  // }
+
+  readAccelerometer();
 }
 
 void loop()
