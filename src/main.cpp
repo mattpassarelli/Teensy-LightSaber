@@ -36,15 +36,15 @@ const int numled = 144;
 int previousMillisInterrupt = 0;
 int previousMillisAccel = 0;
 int currentMillisAccel = 0;
-int xSwingThresholdPositive = 1;
-int zSwingThresholdPositive = 1;
-int xSwingThresholdNegative = -1;
-int zSwingThresholdNegative = -1;
+int xSwingThresholdPositive = 10;
+int zSwingThresholdPositive = 10;
+int xSwingThresholdNegative = -10;
+int zSwingThresholdNegative = -10;
 int clashThreshold = 28;
 int clashThresholdNegative = -28;
 
 int function = 0; //what action are we going to perform
-
+int status = 0; //global status int we can use for initializations and usages
 
 byte drawingMemory[numled * 3];       //  3 bytes per LED
 DMAMEM byte displayMemory[numled * 12]; // 12 bytes per LED
@@ -89,6 +89,16 @@ void setup()
   pinMode(onOffButton, INPUT);
 
   delay(250);
+
+  // start communication with IMU 
+  status = IMU.begin();
+  if (status < 0) {
+    Serial.println("IMU initialization unsuccessful");
+    Serial.println("Check IMU wiring or try cycling power");
+    Serial.print("Status: ");
+    Serial.println(status);
+    while(1) {}
+  }
 
   AudioMemory(8);
   SPI.setMOSI(SDCARD_MOSI_PIN);
@@ -223,9 +233,10 @@ void swing()
     break;
   }
 
-  if (playSdWav1.isPlaying() == false)
+  if (playSdWav2.isPlaying() == false)
   {
-    Serial.println("Playing swing sound");
+    Serial.print("Playing swing sound: ");
+    Serial.println(swing);
     playSdWav1.play(swing);
     delay(10);
   }
@@ -249,7 +260,7 @@ void clash()
     break;
   }
 
-  if (playSdWav1.isPlaying() == false)
+  if (playSdWav2.isPlaying() == false)
   {
     Serial.println("Playing clash sound");
     playSdWav1.play(clash);
@@ -265,8 +276,8 @@ void readAccelerometer()
   float gyroZ = IMU.getGyroZ_rads();
   float accelerationTotal = IMU.getAccelX_mss() + IMU.getAccelY_mss() + IMU.getAccelZ_mss();
 
-  Serial.print("Accelertaion Total: " );
-  Serial.println(accelerationTotal, 6);
+  // Serial.print("Accelertaion Total: " );
+  // Serial.println(accelerationTotal, 6);
 
   if(accelerationTotal >= clashThreshold || accelerationTotal <= clashThresholdNegative){
     Serial.println("We've clashed");
@@ -276,24 +287,24 @@ void readAccelerometer()
 if (gyroX >= xSwingThresholdPositive || gyroX <= xSwingThresholdNegative)
   {
       Serial.println("SWINGING!");
-      // swing();
+      swing();
   }
   if (gyroZ >= zSwingThresholdPositive || gyroZ <= zSwingThresholdNegative)
   {
       Serial.println("SWINGING!");
-      // swing();
+      swing();
   }
 
   delay(100);
 }
 
 void poweredOn() {
-  // if (playSdWav1.isPlaying() == false)
-  // {
-  //   Serial.println("Playing HUM sound");
-  //   playSdWav1.play("HUM.WAV");
-  //   delay(10);
-  // }
+  if (playSdWav1.isPlaying() == false)
+  {
+    Serial.println("Playing HUM sound");
+    playSdWav1.play("HUM.WAV");
+    delay(10);
+  }
 
   readAccelerometer();
 }
