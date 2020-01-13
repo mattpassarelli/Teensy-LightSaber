@@ -22,15 +22,20 @@ AudioConnection patchCord8(mixer1, 0, dacs1, 1);
 // GUItool: end automatically generated code
 
 #define onOffButton PIN_A14
+#define colorButton PIN_A15
 #define SDCARD_CS_PIN BUILTIN_SDCARD
 #define SDCARD_MOSI_PIN 11 // not actually used
 #define SDCARD_SCK_PIN 13  // not actually used
 #define PIN 1
 //Colors
 #define OFFCOLOR 0x000000
-#define GREEN 0x00FF00
+#define GREEN 0x17ff00
 #define RED 0xFF0000
-#define BLUE 0x12B5F0
+#define BLUE 0x12e3f0
+#define PURPLE 0x9c11cc
+#define PINK 0xe359c7
+#define YELLOWORANGE 0xef8d0f
+#define WHITE 0xffffff
 
 const int numled = 144;
 int previousMillisInterrupt = 0;
@@ -42,16 +47,19 @@ int xSwingThresholdNegative = -10;
 int zSwingThresholdNegative = -10;
 int clashThreshold = 28;
 int clashThresholdNegative = -28;
+int colorFlag = 0;
+//How many colors do we have, with the exception of OFF
+const int NUMOFCOLORS = 7;
+int colorInUse = GREEN; //Green by default
 
 int function = 0; //what action are we going to perform
-int status = 0; //global status int we can use for initializations and usages
+int status = 0;   //global status int we can use for initializations and usages
 
-byte drawingMemory[numled * 3];       //  3 bytes per LED
+byte drawingMemory[numled * 3];         //  3 bytes per LED
 DMAMEM byte displayMemory[numled * 12]; // 12 bytes per LED
 
 WS2812Serial leds(numled, displayMemory, drawingMemory, PIN, WS2812_GRB);
-MPU9250 IMU(Wire,0x68);
-
+MPU9250 IMU(Wire, 0x68);
 
 void buttonPress()
 {
@@ -67,6 +75,127 @@ void buttonPress()
       function = 0;
     }
     previousMillisInterrupt = currentMillisInterrupt;
+  }
+}
+
+void switchColors()
+{
+  byte colorByte = 0;
+
+  Serial.println("Switching colors");
+
+  colorFlag++;
+  if (colorFlag > NUMOFCOLORS)
+  {
+    colorFlag = 0;
+  }
+  colorByte = 1;
+
+  switch (colorFlag)
+  {
+    //GREEN
+  case 0:
+    if (colorByte == 1)
+    {
+      for (int i = 1; i < numled; i++)
+      {
+        leds.setPixel(i, GREEN);
+        leds.setPixel(i + 1, GREEN);
+        i++;
+        leds.show();
+      }
+      colorInUse = GREEN;
+      colorByte = 0;
+    }
+    break;
+    //BLUE
+  case 1:
+    if (colorByte == 1)
+    {
+      for (int i = 1; i < numled; i++)
+      {
+        leds.setPixel(i, BLUE);
+        leds.setPixel(i + 1, BLUE);
+        i++;
+        leds.show();
+      }
+      colorInUse = BLUE;
+      colorByte = 0;
+    }
+    break;
+    //RED
+  case 2:
+    if (colorByte == 1)
+    {
+      for (int i = 1; i < numled; i++)
+      {
+        leds.setPixel(i, RED);
+        leds.setPixel(i + 1, RED);
+        i++;
+        leds.show();
+      }
+      colorInUse = RED;
+      colorByte = 0;
+    }
+    break;
+    //PURPLE
+  case 3:
+    if (colorByte == 1)
+    {
+      for (int i = 1; i < numled; i++)
+      {
+        leds.setPixel(i, PURPLE);
+        leds.setPixel(i + 1, PURPLE);
+        i++;
+        leds.show();
+      }
+      colorInUse = PURPLE;
+      colorByte = 0;
+    }
+    break;
+    //PINK
+  case 4:
+    if (colorByte == 1)
+    {
+      for (int i = 1; i < numled; i++)
+      {
+        leds.setPixel(i, PINK);
+        leds.setPixel(i + 1, PINK);
+        i++;
+        leds.show();
+      }
+      colorInUse = PINK;
+      colorByte = 0;
+    }
+    break;
+  case 5:
+    if (colorByte == 1)
+    {
+      for (int i = 1; i < numled; i++)
+      {
+        leds.setPixel(i, YELLOWORANGE);
+        leds.setPixel(i + 1, YELLOWORANGE);
+        i++;
+        leds.show();
+      }
+      colorInUse = YELLOWORANGE;
+      colorByte = 0;
+    }
+    break;
+  case 6:
+    if (colorByte == 1)
+    {
+      for (int i = 1; i < numled; i++)
+      {
+        leds.setPixel(i, WHITE);
+        leds.setPixel(i + 1, WHITE);
+        i++;
+        leds.show();
+      }
+      colorInUse = WHITE;
+      colorByte = 0;
+    }
+    break;
   }
 }
 
@@ -87,17 +216,20 @@ void setup()
 
   pinMode(LED_BUILTIN, OUTPUT);
   pinMode(onOffButton, INPUT);
-
+  pinMode(colorButton, INPUT);
   delay(250);
 
-  // start communication with IMU 
+  // start communication with IMU
   status = IMU.begin();
-  if (status < 0) {
+  if (status < 0)
+  {
     Serial.println("IMU initialization unsuccessful");
     Serial.println("Check IMU wiring or try cycling power");
     Serial.print("Status: ");
     Serial.println(status);
-    while(1) {}
+    while (1)
+    {
+    }
   }
 
   AudioMemory(8);
@@ -115,6 +247,7 @@ void setup()
   mixer1.gain(1, 0.1f);
 
   attachInterrupt(digitalPinToInterrupt(onOffButton), buttonPress, FALLING);
+  attachInterrupt(digitalPinToInterrupt(colorButton), switchColors, FALLING);
 
   Serial.println(playSdWav1.isPlaying() ? "TRUE" : "FALSE");
   if (playSdWav1.isPlaying() == false)
@@ -141,13 +274,14 @@ void turnOn()
     //Seems this value is dependent on how long my ignition sound is
     delay(10);
     // Don't play sound here. It overrides the ignition for some reason
-      //  playSdWav2.play("HUM.WAV");
-      //  delay(10);
+    //  playSdWav2.play("HUM.WAV");
+    //  delay(10);
   }
 
-  for(int i = 1; i < numled; i++){
-    leds.setPixel(i, GREEN);
-    leds.setPixel(i+1, GREEN);
+  for (int i = 1; i < numled; i++)
+  {
+    leds.setPixel(i, colorInUse);
+    leds.setPixel(i + 1, colorInUse);
     i++;
     leds.show();
   }
@@ -279,26 +413,28 @@ void readAccelerometer()
   // Serial.print("Accelertaion Total: " );
   // Serial.println(accelerationTotal, 6);
 
-  if(accelerationTotal >= clashThreshold || accelerationTotal <= clashThresholdNegative){
+  if (accelerationTotal >= clashThreshold || accelerationTotal <= clashThresholdNegative)
+  {
     Serial.println("We've clashed");
     clash();
-  }  
+  }
 
-if (gyroX >= xSwingThresholdPositive || gyroX <= xSwingThresholdNegative)
+  if (gyroX >= xSwingThresholdPositive || gyroX <= xSwingThresholdNegative)
   {
-      Serial.println("SWINGING!");
-      swing();
+    Serial.println("SWINGING!");
+    swing();
   }
   if (gyroZ >= zSwingThresholdPositive || gyroZ <= zSwingThresholdNegative)
   {
-      Serial.println("SWINGING!");
-      swing();
+    Serial.println("SWINGING!");
+    swing();
   }
 
   delay(100);
 }
 
-void poweredOn() {
+void poweredOn()
+{
   if (playSdWav1.isPlaying() == false)
   {
     Serial.println("Playing HUM sound");
@@ -311,22 +447,24 @@ void poweredOn() {
 
 void loop()
 {
+
+  // switchColors();
   // put your main code here, to run repeatedly:
   switch (function)
   {
-    case 0:
-      stayOff();
-      break;
-    case 1:
-      turnOn();
-      break;
-    case 2:
-      poweredOn();
-      break;
-    case 3:
-      turnOff();
-      break;
-    default:
-      break;
+  case 0:
+    stayOff();
+    break;
+  case 1:
+    turnOn();
+    break;
+  case 2:
+    poweredOn();
+    break;
+  case 3:
+    turnOff();
+    break;
+  default:
+    break;
   }
 }
