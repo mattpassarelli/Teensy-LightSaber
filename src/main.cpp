@@ -21,7 +21,7 @@ AudioConnection patchCord7(mixer1, 0, dacs1, 0);
 AudioConnection patchCord8(mixer1, 0, dacs1, 1);
 // GUItool: end automatically generated code
 
-#define onOffButton PIN_A14
+#define onOffButton PIN_A13
 #define colorButton PIN_A15
 #define SDCARD_CS_PIN BUILTIN_SDCARD
 #define SDCARD_MOSI_PIN 11 // not actually used
