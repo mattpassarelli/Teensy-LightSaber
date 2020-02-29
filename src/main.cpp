@@ -3,7 +3,7 @@
 #include <SPI.h>
 #include <SD.h>
 #include <SerialFlash.h>
-#include <WS2812Serial.h>
+#include "WS2812Serial.h"
 #include "MPU9250.h"
 
 // GUItool: begin automatically generated code
@@ -33,9 +33,9 @@ AudioConnection patchCord8(mixer1, 0, dacs1, 1);
 #define RED 0xFF0000
 #define BLUE 0x12e3f0
 #define PURPLE 0x9c11cc
-#define PINK 0xe359c7
+// #define PINK 0xe359c7
 #define YELLOWORANGE 0xef8d0f
-#define WHITE 0xffffff
+// #define WHITE 0xffffff Taking out white because I'd rather have brighter colors than White with dimmer ones
 
 const int numled = 144;
 int previousMillisInterrupt = 0;
@@ -49,7 +49,7 @@ int clashThreshold = 28;
 int clashThresholdNegative = -28;
 int colorFlag = 0;
 //How many colors do we have, with the exception of OFF
-const int NUMOFCOLORS = 7;
+const int NUMOFCOLORS = 5;
 int colorInUse = GREEN; //Green by default
 
 int function = 0; //what action are we going to perform
@@ -80,7 +80,7 @@ void buttonPress()
 
 void switchColors()
 {
-  byte colorByte = 0;
+  byte colorByte = 1;
 
   Serial.println("Switching colors");
 
@@ -89,7 +89,6 @@ void switchColors()
   {
     colorFlag = 0;
   }
-  colorByte = 1;
 
   switch (colorFlag)
   {
@@ -97,7 +96,7 @@ void switchColors()
   case 0:
     if (colorByte == 1)
     {
-      for (int i = 1; i < numled; i++)
+      for (int i = 0; i < numled; i++)
       {
         leds.setPixel(i, GREEN);
         leds.setPixel(i + 1, GREEN);
@@ -112,7 +111,7 @@ void switchColors()
   case 1:
     if (colorByte == 1)
     {
-      for (int i = 1; i < numled; i++)
+      for (int i = 0; i < numled; i++)
       {
         leds.setPixel(i, BLUE);
         leds.setPixel(i + 1, BLUE);
@@ -127,7 +126,7 @@ void switchColors()
   case 2:
     if (colorByte == 1)
     {
-      for (int i = 1; i < numled; i++)
+      for (int i = 0; i < numled; i++)
       {
         leds.setPixel(i, RED);
         leds.setPixel(i + 1, RED);
@@ -142,7 +141,7 @@ void switchColors()
   case 3:
     if (colorByte == 1)
     {
-      for (int i = 1; i < numled; i++)
+      for (int i = 0; i < numled; i++)
       {
         leds.setPixel(i, PURPLE);
         leds.setPixel(i + 1, PURPLE);
@@ -157,21 +156,7 @@ void switchColors()
   case 4:
     if (colorByte == 1)
     {
-      for (int i = 1; i < numled; i++)
-      {
-        leds.setPixel(i, PINK);
-        leds.setPixel(i + 1, PINK);
-        i++;
-        leds.show();
-      }
-      colorInUse = PINK;
-      colorByte = 0;
-    }
-    break;
-  case 5:
-    if (colorByte == 1)
-    {
-      for (int i = 1; i < numled; i++)
+      for (int i = 0; i < numled; i++)
       {
         leds.setPixel(i, YELLOWORANGE);
         leds.setPixel(i + 1, YELLOWORANGE);
@@ -179,20 +164,6 @@ void switchColors()
         leds.show();
       }
       colorInUse = YELLOWORANGE;
-      colorByte = 0;
-    }
-    break;
-  case 6:
-    if (colorByte == 1)
-    {
-      for (int i = 1; i < numled; i++)
-      {
-        leds.setPixel(i, WHITE);
-        leds.setPixel(i + 1, WHITE);
-        i++;
-        leds.show();
-      }
-      colorInUse = WHITE;
       colorByte = 0;
     }
     break;
@@ -207,6 +178,7 @@ void setup()
 
   //Set LEDs to Off
   leds.begin();
+  leds.setBrightness(100);
   for (int i = numled; i > -10; i--)
   {
     leds.setPixel(i, OFFCOLOR);
@@ -215,8 +187,8 @@ void setup()
   leds.show();
 
   pinMode(LED_BUILTIN, OUTPUT);
-  pinMode(onOffButton, INPUT);
-  pinMode(colorButton, INPUT);
+  pinMode(onOffButton, INPUT_PULLUP);
+  pinMode(colorButton, INPUT_PULLUP);
   delay(250);
 
   // start communication with IMU
@@ -246,8 +218,8 @@ void setup()
   mixer1.gain(0, 0.1f);
   mixer1.gain(1, 0.1f);
 
-  attachInterrupt(digitalPinToInterrupt(onOffButton), buttonPress, FALLING);
-  attachInterrupt(digitalPinToInterrupt(colorButton), switchColors, FALLING);
+  attachInterrupt(digitalPinToInterrupt(onOffButton), buttonPress, RISING);
+  attachInterrupt(digitalPinToInterrupt(colorButton), switchColors, RISING);
 
   Serial.println(playSdWav1.isPlaying() ? "TRUE" : "FALSE");
   if (playSdWav1.isPlaying() == false)
@@ -278,7 +250,7 @@ void turnOn()
     //  delay(10);
   }
 
-  for (int i = 1; i < numled; i++)
+  for (int i = 0; i < numled; i++)
   {
     leds.setPixel(i, colorInUse);
     leds.setPixel(i + 1, colorInUse);
