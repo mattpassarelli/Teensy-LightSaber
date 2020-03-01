@@ -218,8 +218,8 @@ void setup()
   mixer1.gain(0, 0.1f);
   mixer1.gain(1, 0.1f);
 
-  attachInterrupt(digitalPinToInterrupt(onOffButton), buttonPress, RISING);
-  attachInterrupt(digitalPinToInterrupt(colorButton), switchColors, RISING);
+  attachInterrupt(digitalPinToInterrupt(onOffButton), buttonPress, FALLING);
+  attachInterrupt(digitalPinToInterrupt(colorButton), switchColors, FALLING);
 
   Serial.println(playSdWav1.isPlaying() ? "TRUE" : "FALSE");
   if (playSdWav1.isPlaying() == false)
