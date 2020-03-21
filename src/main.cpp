@@ -45,8 +45,8 @@ int xSwingThresholdPositive = 3;
 int zSwingThresholdPositive = 3;
 int xSwingThresholdNegative = -3;
 int zSwingThresholdNegative = -3;
-int clashThreshold = 28;
-int clashThresholdNegative = -28;
+int clashThreshold = 18;
+int clashThresholdNegative = -18;
 int colorFlag = 0;
 //How many colors do we have, with the exception of OFF
 const int NUMOFCOLORS = 5;
@@ -193,16 +193,16 @@ void setup()
 
   // start communication with IMU
   status = IMU.begin();
-  if (status < 0)
-  {
-    Serial.println("IMU initialization unsuccessful");
-    Serial.println("Check IMU wiring or try cycling power");
-    Serial.print("Status: ");
-    Serial.println(status);
-    while (1)
-    {
-    }
-  }
+  // if (status < 0)
+  // {
+  //   Serial.println("IMU initialization unsuccessful");
+  //   Serial.println("Check IMU wiring or try cycling power");
+  //   Serial.print("Status: ");
+  //   Serial.println(status);
+  //   while (1)
+  //   {
+  //   }
+  // }
 
   AudioMemory(8);
   SPI.setMOSI(SDCARD_MOSI_PIN);
@@ -215,8 +215,8 @@ void setup()
       delay(500);
     }
   }
-  mixer1.gain(0, 0.1f);
-  mixer1.gain(1, 0.1f);
+  mixer1.gain(0, 0.4f);
+  mixer1.gain(1, 0.4f);
 
   attachInterrupt(digitalPinToInterrupt(onOffButton), buttonPress, FALLING);
   attachInterrupt(digitalPinToInterrupt(colorButton), switchColors, FALLING);
@@ -280,14 +280,14 @@ void turnOff()
 
 void swing()
 {
-  int index = random(0, 15);
+  int index = random(0, 8);
 
   const char *swing = "";
 
   switch (index)
   {
   case 0:
-    swing = "SWING1.WAV";
+    swing = "SWING.WAV";
     break;
   case 1:
     swing = "SWING2.WAV";
@@ -313,44 +313,21 @@ void swing()
   case 8:
     swing = "SWING8.WAV";
     break;
-  case 9:
-    swing = "SWING10.WAV";
-    break;
-  case 10:
-    swing = "SWING11.WAV";
-    break;
-  case 11:
-    swing = "SWING12.WAV";
-    break;
-  case 12:
-    swing = "SWING13.WAV";
-    break;
-  case 13:
-    swing = "SWING14.WAV";
-    break;
-  case 14:
-    swing = "SWING15.WAV";
-    break;
-  case 15:
-    swing = "SWING16.WAV";
-    break;
   default:
-    swing = "SWING1.WAV";
+    swing = "SWING.WAV";
     break;
   }
 
-  if (playSdWav2.isPlaying() == false)
-  {
     Serial.print("Playing swing sound: ");
     Serial.println(swing);
     playSdWav1.play(swing);
     delay(10);
-  }
+  
 }
 
 void clash()
 {
-  int index = random(0, 2);
+  int index = random(0, 8);
   const char *clash = "";
 
   switch (index)
@@ -364,14 +341,31 @@ void clash()
   case 2:
     clash = "CLASH3.WAV";
     break;
+  case 3:
+    clash = "CLASH4.WAV";
+    break;
+  case 4:
+    clash = "CLASH5.WAV";
+    break;
+  case 5:
+    clash = "CLASH6.WAV";
+    break;
+  case 6:
+    clash = "CLASH7.WAV";
+    break;
+  case 7:
+    clash = "CLASH8.WAV";
+    break;
+  default:
+    clash = "ClASH1.WAV";
+    break;
   }
 
-  if (playSdWav2.isPlaying() == false)
-  {
+
     Serial.println("Playing clash sound");
     playSdWav1.play(clash);
     delay(10);
-  }
+  
 }
 
 void readAccelerometer()
